@@ -1,0 +1,70 @@
+SETS:
+  var /1..4/: group, C_run, C_open, C_start;
+  SEQ /1..5/: t, Load, Reserve, G1, G2, G3, G4, Grid;
+  mat(SEQ, var):Map;
+ENDSETS
+
+DATA:
+  t = 0, 1, 2, 3, 4;
+  group = 1, 2, 3, 4;
+  Load = 0, 100, 130, 170, 140;
+  Reserve = 0, 20, 30, 50, 40;
+ENDDATA
+
+! Data
+  G1_UP = 0.4;
+  G2_UP = 0.72;
+  G1_DOWN = -0.55;
+  G2_DOWN = -0.99;
+  G1_MAX = 1.0;
+  G2_MAX = 1.8;
+  G1_MAX = 3.0;
+  G2_MAX = 6.0;
+  Grid_Fee = 4.615;
+
+MAX = @SUM(SEQ(t)|t#GE#1:
+          @FOR(group(i)|i:  Map(t, i)* (C_open(i) + C_run(1)*G1(t) + C_run(2)*G22(t) +
+          C_run(3)*G3(t) + C_run(4)*G4(t) + (1-Map(i, t-1))*C_start(i) )) +
+          (PR_DA(t) + PR_RT(t) + Grid_Fee) * Grid(t) );
+
+@FOR(SEQ(t)|t#GE#1:  G1(t) = G1(t) * Map(t, 1)  );
+@FOR(SEQ(t)|t#GE#1:  G2(t) = G2(t) * Map(t, 2)  );
+@FOR(SEQ(t)|t#GE#1:  G3(t) = G1(t) * Map(t, 3)  );
+@FOR(SEQ(t)|t#GE#1:  G4(t) = G2(t) * Map(t, 4)  );
+@FOR(SEQ(t)|t#GE#1:  G1(t) - G1(t-1) <= G1_UP  );
+@FOR(SEQ(t)|t#GE#1:  G1(t) - G1(t-1) >= G1_DOWN  );
+@FOR(SEQ(t)|t#GE#1:  G2(t) - G2(t-1) <= G2_UP  );
+@FOR(SEQ(t)|t#GE#1:  G2(t) - G2(t-1) >= G2_DOWN  );
+
+@FOR(SEQ(t)|t#GE#1:  G1(t) <= G1_MAX  );
+@FOR(SEQ(t)|t#GE#1:  G2(t) <= G2_MAX  );
+@FOR(SEQ(t)|t#GE#1:  G3(t) <= G3_MAX  );
+@FOR(SEQ(t)|t#GE#1:  G4(t) <= G4_MAX  );
+@FOR(SEQ(t)|t#GE#1:  (G1(t) - 50) * Map(t,1) >= 0  );
+@FOR(SEQ(t)|t#GE#1:  (G2(t) - 20) * Map(t,2) >= 0  );
+
+@FOR(SEQ(t)|t#GE#1:  G1(t)*Map(t, 1) + G2(t)*Map(t, 2) + G3(t)*Map(t, 3) +
+                     G4(t)*Map(t, 4) + Grid(t) = Load(t)  );
+@FOR(SEQ(t)|t#GE#1:  G1_MAX*Map(t,1) + G2_MAX*Map(t, 2) + G3(t)*Map(t, 3) +
+                     G4(t)*Map(t, 4) - ( Load(t) + Grid(t) ) >= Reserve(t)  );
+
+@FOR(SEQ(t)|t#GE#1:  Map(t, 1) * (1 - Map(t-1, 1)) * (G1(t) - G1_MAX) = 0  );
+@FOR(SEQ(t)|t#GE#1:  Map(t, 2) * (1 - Map(t-1, 2)) * (G2(t) - G2_MAX) = 0  );
+@FOR(SEQ(t)|t#GE#1:  Map(t-1, 1) * (1 - Map(t, 1)) * (G1(t-1) - G1_MAX) = 0  );
+@FOR(SEQ(t)|t#GE#1:  Map(t-2, 1) * (1 - Map(t, 2)) * (G2(t-1) - G2_MAX) = 0  );
+
+
+! Constriant
+
+(Map(2,2)-Map(3,2))*(Map(1,2)+Map(2,2)-2)*Map(2,2)>0;
+(Map(3,2)-Map(4,2))*(Map(2,2)+Map(3,2)-2)*Map(3,2)>0;
+(Map(4,2)-Map(5,2))*(Map(3,2)+Map(4,2)-2)*Map(4,2)>0;
+
+! Initial
+G1(1)=100;
+G2(1)=0;
+a(1,1)=1;
+a(1,2)=0;  
+@FOR(mat:@bin(a));
+
+END
