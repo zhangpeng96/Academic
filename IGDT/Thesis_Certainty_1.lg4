@@ -1,7 +1,7 @@
 SETS:
-  var /1..4/: group, C_run, C_open, C_start;
+  NUM /1..4/: group, C_run, C_open, C_start;
   SEQ /1..5/: t, Load, Reserve, G1, G2, G3, G4, Grid;
-  mat(SEQ, var):Map;
+  MAT(SEQ, NUM): Map;
 ENDSETS
 
 DATA:
@@ -12,6 +12,7 @@ DATA:
 ENDDATA
 
 ! Data
+  T_MAX = 4;
   G1_UP = 0.4;
   G2_UP = 0.72;
   G1_DOWN = -0.55;
@@ -22,10 +23,14 @@ ENDDATA
   G2_MAX = 6.0;
   Grid_Fee = 4.615;
 
-MAX = @SUM(SEQ(t)|t#GE#1:
-          @FOR(group(i)|i:  Map(t, i)* (C_open(i) + C_run(1)*G1(t) + C_run(2)*G22(t) +
-          C_run(3)*G3(t) + C_run(4)*G4(t) + (1-Map(i, t-1))*C_start(i) )) +
-          (PR_DA(t) + PR_RT(t) + Grid_Fee) * Grid(t) );
+
+MAX = PROFIT;
+
+COST = @SUM (MAT(t, i)|t#GE#2:  Map(t, i) * (C_open(i) + (1 - Map(i, t-1)) * C_start(i) )) + 
+       @SUM (SEQ(t)|t#GE#2:  (PR_DA(t) + PR_RT(t) + Grid_Fee) * Grid(t) + Map(t, 1)*C_run(1)*G1(t) + 
+             Map(t, 2)*C_run(2)*G2(t) + Map(t, 3)*C_run(3)*G3(t) + Map(t, 4)*C_run(4)*G4(t)  );
+
+PROFIT = PR_SALE * T_MAX * @SUM (SEQ(t)|t#GE#2: Load(t)) - COST; 
 
 @FOR(SEQ(t)|t#GE#1:  G1(t) = G1(t) * Map(t, 1)  );
 @FOR(SEQ(t)|t#GE#1:  G2(t) = G2(t) * Map(t, 2)  );
@@ -65,6 +70,6 @@ G1(1)=100;
 G2(1)=0;
 a(1,1)=1;
 a(1,2)=0;  
-@FOR(mat:@bin(a));
+@FOR(MAT:@bin(a));
 
 END
