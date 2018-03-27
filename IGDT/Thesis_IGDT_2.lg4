@@ -28,7 +28,7 @@ enddata
   Grid_Fee = 4.615;
 
 !IGDT_Parameters;
-  MIN = alpha;
+  MAX = alpha;
   alpha < 1;
   alpha > 0;
   alpha1 = mu1 * alpha;
@@ -42,22 +42,22 @@ enddata
   Bc = B0 * (1-delta);
 
 
-
-  MIN = COST;
-
   COST = @SUM(rhv(i)|i#GE#2: a(i,1)*C_open(1) + a(i,2)*C_open(2) + (1-a(i-1, 1))*C_start(1) + (1-a(i-1, 2))*C_start(2) +
       Grid(i)*( (PR_DA(i)+PR_RT(i))*(1+alpha1) + Grid_Fee) + 
       a(i,1)*C_open(1) + a(i,2)*C_open(2) + 
       a(i,1)*C_run(1)*a1(i) + a(i,2)*C_run(2)*a2(i) +
       C_run(3)*a3(i) + C_run(4)*a4(i) 
   );
+  COST < Bc;
 
   @for(rhv(i)|i#ge#2:a1(i)=a1(i)*a(i,1)); 
   @for(rhv(i)|i#ge#2:a2(i)=a2(i)*a(i,2)); 
-  @for(rhv(i)|i#ge#2:a3(i)=G3(i)*a(i,3)*(1+alpha2) ); 
-  @for(rhv(i)|i#ge#2:a4(i)=G4(i)*a(i,4)*(1+alpha2) ); 
+  @for(rhv(i)|i#ge#2:a3(i)=G3(i)*a(i,3)); 
+  @for(rhv(i)|i#ge#2:a4(i)=G4(i)*a(i,4)); 
 
-  @for(rhv(i)|i#ge#2:a1(i)+a2(i)+Grid(i)=b(i)*(1+alpha3));
+  !@for(rhv(i)|i#ge#2:b(i)=b(i)*(1+alpha3)); 
+
+  @for(rhv(i)|i#ge#2:a1(i)+a2(i)+(a3(i)+a4(i))*(1+alpha2)+Grid(i)=b(i));
 
   @for(rhv(i)|i#ge#2:a1(i)-a1(i-1)<=0.4);
   @for(rhv(i)|i#ge#2:a1(i)-a1(i-1)>=-0.55);
