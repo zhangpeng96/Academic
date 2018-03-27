@@ -1,0 +1,68 @@
+sets:
+   var/1..2/:m,C_start,C_open;
+   rhv/1..6/:t,b,c,a1,a2,a3,a4,Grid,PR_DA,PR_RT,G3,G4,Reserve;
+   !mat(rhv,var):a;
+   vas/1..4/:n,C_run;
+   mat(rhv,vas):a;
+   road/1..3/;
+   bus/1..3/:e;
+   mx(road,bus):r;
+   !aver:price;
+endsets
+data:
+   t=1,2,3,4,5,6;
+   m=1,2;
+   C_run = 19.96, 35.93, 14.77, 45.54;
+   C_open = 7.98, 14.37;
+   b=0, 6.75, 6.47, 6.31, 6.23, 6.31;
+   c=0,20,30,50,40,35;
+   C_start = 23.95, 43.12;
+  PR_DA = 0, 21.1, 19.8, 18.9, 18.6, 19.4;
+  PR_RT = 0, 21.8, 22.4, 20.3, 19.9, 21.1;
+  G3 = 0, 0, 0, 0, 0.012, 0.048;
+  G4 = 0, 3.204, 3.204, 2.808, 3.744, 3.948;
+  Reserve = 0, 0.14, 0.13, 0.13, 0.12, 0.13;
+enddata
+
+  Grid_Fee = 4.615;
+
+min = COST;
+
+COST = @SUM(rhv(i)|i#GE#2: a(i,1)*C_open(1) + a(i,2)*C_open(2) + (1-a(i-1, 1))*C_start(1) + (1-a(i-1, 2))*C_start(2) +
+    Grid(i)*(PR_DA(i)+PR_RT(i)+Grid_Fee) + 
+    a(i,1)*C_open(1) + a(i,2)*C_open(2) + 
+    a(i,1)*C_run(1)*a1(i) + a(i,2)*C_run(2)*a2(i) +
+    C_run(3)*a3(i) + C_run(4)*a4(i) 
+);
+
+
+@for(rhv(i)|i#ge#2:a1(i)=a1(i)*a(i,1)); 
+@for(rhv(i)|i#ge#2:a2(i)=a2(i)*a(i,2)); 
+@for(rhv(i)|i#ge#2:a3(i)=G3(i)*a(i,3)); 
+@for(rhv(i)|i#ge#2:a4(i)=G4(i)*a(i,4)); 
+
+
+@for(rhv(i)|i#ge#2:a1(i)+a2(i)+Grid(i)=b(i));
+
+
+! The solution will infeasible when this equation enabled, +b(i) feasible;
+@for(rhv(i)|i#ge#2:a1(i)+a2(i)+a3(i)+a4(i)-Grid(i)-b(i)Reserve(i) );
+
+@for(rhv(i)|i#ge#2:a1(i)-a1(i-1)<=0.4);
+@for(rhv(i)|i#ge#2:a1(i)-a1(i-1)>=-0.55);
+@for(rhv(i)|i#ge#2:a2(i)-a2(i-1)<=0.72);
+@for(rhv(i)|i#ge#2:a2(i)-a2(i-1)>=-0.99);
+
+@for(rhv(i)|i#ge#2:a1(i)<=1);
+@for(rhv(i)|i#ge#2:a2(i)<=1.8);
+
+
+
+a1(1)=0;
+a2(1)=0;
+a(1,1)=1;
+a(1,2)=0;
+
+@for(mat:@bin(a));
+
+end
