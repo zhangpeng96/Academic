@@ -42,7 +42,7 @@ COST = @SUM(rhv(i)|i#GE#2: a(i,1)*C_open(1) + a(i,2)*C_open(2) + (1-a(i-1, 1))*C
 @for(rhv(i)|i#ge#2:a4(i)=G4(i)*a(i,4)); 
 
 
-@for(rhv(i)|i#ge#2:a1(i)+a2(i)+Grid(i)=b(i));
+@for(rhv(i)|i#ge#2:a1(i)+a2(i)+a3(i)+a4(i)+Grid(i)=b(i));
 
 
 ! The solution will infeasible when this equation enabled, +b(i) feasible;
