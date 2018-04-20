@@ -1,281 +1,160 @@
-########################### GATEWAY HEADER #############################
-#                           
-#     _|      _|  _|_|_|  _|_|_|      _|_|      _|_|_|    _|_|    
-#     _|_|  _|_|    _|    _|    _|  _|    _|  _|        _|    _|  
-#     _|  _|  _|    _|    _|    _|  _|_|_|_|  _|        _|    _|  
-#     _|      _|    _|    _|    _|  _|    _|  _|        _|    _|  
-#     _|      _|  _|_|_|  _|_|_|    _|    _|    _|_|_|    _|_|  
-#
-#                                                   Version 5.0
-#
 ########################################################################
 #
-#           See the MIDACO user manual for detailed information
+#     This is an example call of MIDACO 6.0
+#     -------------------------------------
+#
+#     MIDACO solves Multi-Objective Mixed-Integer Non-Linear Problems:
+#
+#
+#      Minimize     F_1(X),... F_O(X)  where X(1,...N-NI)   is CONTINUOUS
+#                                      and   X(N-NI+1,...N) is DISCRETE
+#
+#      subject to   G_j(X)  =  0   (j=1,...ME)      equality constraints
+#                   G_j(X) >=  0   (j=ME+1,...M)  inequality constraints
+#
+#      and bounds   XL <= X <= XU
+#
+#
+#     The problem statement of this example is given below. You can use 
+#     this example as template to run your own problem. To do so: Replace 
+#     the objective functions 'F' (and in case the constraints 'G') given 
+#     here with your own problem and follow the below instruction steps.
 #
 ########################################################################
-#
-#    Author (C) :   Dr. Martin Schlueter
-#                   Information Initiative Center,
-#                   Division of Large Scale Computing Systems,
-#                   Hokkaido University, JAPAN.
-#
-#    Email :        info@midaco-solver.com
-#
-#    URL :          http://www.midaco-solver.com
-#       
+######################   OPTIMIZATION PROBLEM   ########################
 ########################################################################
+def problem_function(x):
 
-import ctypes; 
-from ctypes import *
-import os
-import os.path
-import numpy as np
+    f = [0.0]*1 # Initialize array for objectives F(X)
+    g = [0.0]*3 # Initialize array for constraints G(X)
 
-########################################################################
-
-def run( problem, option, key ):
-
- problem_function = problem['@']
-
- o =problem['o'] 
- n =problem['n'] 
- ni=problem['ni']
- m =problem['m'] 
- me=problem['me']
-
- xl=problem['xl']
- xu=problem['xu']
- x =problem['x']
-
- maxeval=option['maxeval']
- maxtime=option['maxtime']
-
- printeval=option['printeval']
- save2file=option['save2file']
-
- param=[0.0]*12
-
- param[ 0] = option['param1']  
- param[ 1] = option['param2']  
- param[ 2] = option['param3']  
- param[ 3] = option['param4']  
- param[ 4] = option['param5']  
- param[ 5] = option['param6']  
- param[ 6] = option['param7']  
- param[ 7] = option['param8']  
- param[ 8] = option['param9']  
- param[ 9] = option['param10'] 
- param[10] = option['param11'] 
- param[11] = option['param12'] 
-
- PARALLEL = option['parallel']
-
- if PARALLEL <= 1 : p = 1
- if PARALLEL  > 1 : p = PARALLEL
-
- ########################################################################
- ########################################################################
- ########################################################################
- ####################### IMPORT MIDACO LIBRARY ##########################
- ########################################################################
- ########################################################################
- ########################################################################
- 
- # Specify name of the MIDACO library depending on OS
- if (os.name == "posix"):  lib_name = "midacopy.so"  # Linux//Mac/Cygwin
- else:                     lib_name = "midacopy.dll" # Windows
- # Specify path were the MIDACO library is expected  
- lib_path=os.path.dirname(os.path.abspath(__file__))+os.path.sep+lib_name
- # Assign CLIB as name for MIDACO library
- CLIB = ctypes.CDLL(lib_path)
- ########################################################################
- ######################### CALL MIDACO SOLVER ###########################
- ########################################################################
- key_ = c_char_p(key)  
- # Create c-types arguments and initialize workspace and flags
- n_  = pointer(c_long(n));  n__   = c_long(n);  xl_    = (c_double * n)()
- ni_ = pointer(c_long(ni)); ni__  = c_long(ni); xu_    = (c_double * n)()
- m_  = pointer(c_long(m));  m__   = c_long(m);  x_     = (c_double * n)()
- me_ = pointer(c_long(me)); me___ = c_long(me); param_ = (c_double *12)()
- o_  = pointer(c_long(o));  o__   = c_long(o);        
- printeval_ = c_long(printeval);  iflag_ = pointer(c_long(0)) 
- save2file_ = c_long(save2file);  istop_ = pointer(c_long(0))
- maxeval_   = c_long(maxeval);        p__= c_long(p);
- maxtime_   = c_long(maxtime);        p_ = pointer(c_long(p))  
- lrw_ = pointer(c_long(105*n+m*p+2*m+o*o+4*o*p+10*o+3*p+1000)); 
- rw_ =  (c_double * lrw_[0])()
- liw_ = pointer(c_long(3*n+p+200));     iw_ =  (c_long *   liw_[0])()    
- if( o == 1 ): 
-     lpf_ = pointer(c_long(1))
- if( o > 1 ): 
-     lpf_ = pointer(c_long(100 * (o+m+n) + 1))
-     if( param[9] >= 1.0 ): 
-       lpf_ = pointer(c_long(  int(param[9]) * (o+m+n) + 1))
-     if( param[9] <=-1.0 ): 
-       lpf_ = pointer(c_long( -int(param[9]) * (o+m+n) + 1))       
- pf_ =  (c_double * lpf_[0])()
- for i in range(0, lpf_[0]):  pf_[i] = c_double(0.0)  
- for i in range(0, lrw_[0]):  rw_[i] = c_double(0.0)    
- for i in range(0, liw_[0]):  iw_[i] = c_long(0); 
- for i in range(0,12): param_[i] = c_double(param[i])
- for i in range(0, n): xl_[i]    = c_double(xl[i])  
- for i in range(0, n): xu_[i]    = c_double(xu[i])  
- for i in range(0, n): x_[i]     = c_double( x[i])
- f_ = (c_double * o)()
- if ( m > 0): g_ = (c_double * m)()
- if ( m ==0): g_ = (c_double * 1)() # Dummy for unconstrained problems
- ########################################################################
+    DT_A = [0.104, 0.001, 0.001, 0.001, 0.001]
+    DT_B = [10.2, 16.7, 14.6, 14.6, 42.3]
+    DT_C = [24.5, 8.6, 20.4, 32.1, 15.2]
+    DT_PMIN = [2.1, 0.01, 0.01, 0.01, 0.01]
+    DT_PMAX = [10, 5.6, 0.5, 0.5, 100]
+    DT_PV = [0, 0, 1, 0, 0]
+    DT_WT = [0, 0, 0, 1, 0]
+    DT_GRID = [0, 0, 0, 0, 1]
 
 
+    LP_spot = [18.6, 19.9, 19.3]
+    LP_sale = [16.2, 16.3, 16.3]
+    LP_PV = [0, 0, 8.71]
+    LP_WT = [43.66, 46.64, 47.3]
+    LP_LD = [110.75, 106.52, 104.35]
 
+    for i in range(3):
+      for j in range(5):
+        idx = i * 5 + j
+        f[0] = f[0] + \
+               DT_A[j] * x[idx] ** 2 + \
+               DT_B[j] * x[idx] + \
+               DT_C[j] + \
+               DT_GRID[j] * x[idx] * LP_spot[i] - \
+               DT_PV[j] * (LP_PV[i] - x[idx]) * LP_sale[i] - \
+               DT_WT[j] * (LP_WT[i] - x[idx]) * LP_sale[i] 
 
-
- if PARALLEL <= 1 :
-   ########################################################################
-   ########################################################################
-   ########################################################################
-   # Print MIDACO Head information
-   CLIB.midaco_print(1,printeval_,save2file_,iflag_,istop_,f_,g_,x_,xl_,xu_,\
-                     o__,n__,ni__,m__,me___,rw_,pf_,maxeval_,maxtime_,param_,p__,key_)      
-   ########################################################################
-   while True: # Call MIDACO by reverse communication loop 
-   
-   
-     [ f_[:], g_[:] ] =  problem_function(x_[:]) # Evaluate F(X) and G(X)  
-
-
-     # Check and repair NaN
-     for i in range(0,o): 
-          if np.isnan(f_[i]) : 
-               f_[i] =  1.0e+33
-     for i in range(0,m): 
-          if np.isnan(g_[i]) : 
-               g_[i] = -1.0e+33
-     # Check and repair Inf
-     for i in range(0,o): 
-          if np.isinf(f_[i]) : 
-               f_[i] =  1.0e+32
-     for i in range(0,m): 
-          if np.isinf(g_[i]) : 
-               g_[i] = -1.0e+32  
-                  
-
-     CLIB.midaco(p_,o_,n_,ni_,m_,me_,x_,f_,g_,xl_,xu_, \
-                 iflag_,istop_,param_,rw_,lrw_,iw_,liw_,pf_,lpf_,key_)
-                 
-     CLIB.midaco_print(2,printeval_,save2file_,iflag_,istop_, \
-                       f_,g_,x_,xl_,xu_,o__,n__,ni__,m__,me___,rw_,pf_, \
-                       maxeval_,maxtime_,param_,p__,key_)              
-     
-     if istop_[0] != 0: break          
-   ########################################################################
-   ########################################################################
-   ########################################################################        
-
-
-
-
-
-
- if PARALLEL > 1 :
-   ########################################################################
-   ########################################################################
-   ########################################################################   
-   # Pre-Allocate A and B for speed
-   A  = [[None]*n]*p
-   B  = [[None],[None]*m]*p
-   # Create paralle arrays for f,g and x
-   po = p*o; fff_ = (c_double * po)()
-   pm = p*m; ggg_ = (c_double * pm)()
-   pn = p*n; xxx_ = (c_double * pn)()
-   for c in range(0,p): 
-     for i in range(0, n): xxx_[c*n+i] = c_double(x[i])
-   # Start the parallel pool
-   from multiprocessing import Pool
-   pool   = Pool(processes=p); 
-   #print '\n *** Running MIDACO in Parallel Mode: P = ',p,' ***'
-   ########################################################################
-   ########################################################################
-   ########################################################################
-   # Print MIDACO Head information
-   CLIB.midaco_print(1,printeval_,save2file_,iflag_,istop_,f_,g_,x_,xl_,xu_,\
-                     o__,n__,ni__,m__,me___,rw_,pf_,maxeval_,maxtime_,param_,p__,key_)      
-   ########################################################################
-   while True: # Call MIDACO by reverse communication loop 
-           
-     # Store x in A   
-     for c in range(0,p): 
-       x = [None]*n
-       for i in range(0,n): x[i] = xxx_[c*n+i]
-       A[c] = x
-       
-     # Evaluate problem function in parallel  
-     B = pool.map( problem_function, A)
-         
-     # Get f(x) and g(x) out of B
-     for c in range(0,p): 
-        
-       for j in range(0,o): fff_[c*o+j] = c_double(B[c][0][j])
-       for j in range(0,m): ggg_[c*m+j] = c_double(B[c][1][j])
-
-
-       # Check and repair NaN
-       for i in range(0,o*p): 
-            if np.isnan(fff_[i]) : 
-                 fff_[i] =  1.0e+33
-       for i in range(0,m*p): 
-            if np.isnan(ggg_[i]) : 
-                 ggg_[i] = -1.0e+33
-       # Check and repair Inf
-       for i in range(0,o*p): 
-            if np.isinf(fff_[i]) : 
-                 fff_[i] =  1.0e+32
-       for i in range(0,m*p): 
-            if np.isinf(ggg_[i]) : 
-                 ggg_[i] = -1.0e+32  
-
-                      
-     CLIB.midaco(p_,o_,n_,ni_,m_,me_,xxx_,fff_,ggg_,xl_,xu_, \
-                 iflag_,istop_,param_,rw_,lrw_,iw_,liw_,pf_,lpf_,key_)     
-                 
-     CLIB.midaco_print(2,printeval_,save2file_,iflag_,istop_, \
-                       fff_,ggg_,xxx_,xl_,xu_,o__,n__,ni__,m__,me___,rw_,pf_, \
-                       maxeval_,maxtime_,param_,p__,key_)                                 
-     
-     if istop_[0] != 0: break  
-   ########################################################################
-   ########################################################################
-   ########################################################################  
-   # Get solution x out of xxx  
-   for i in range(0,o): f_[i] = fff_[i]
-   for i in range(0,m): g_[i] = ggg_[i]
-   for i in range(0,n): x_[i] = xxx_[i]                          
-
-
-
-
-
-
- ########################################################################
- #################### RETURN ARGUMENTS = SOLUTION #######################
- ########################################################################
- 
- f = [0.0]*o 
- g = [0.0]*m 
- x = [0.0]*n 
-
- for i in range(0,o): f[i] = f_[i]
- for i in range(0,m): g[i] = g_[i]
- for i in range(0,n): x[i] = x_[i]     
     
- solution = {}
+    idc = 0
+    for i in range(3):
+      powersum = 0.0
 
- solution['F'] = f
- solution['G'] = g
- solution['X'] = x
- solution['IFLAG'] = iflag_[0]
+      for j in range(5):
+        idx = i * 5 + j
+        powersum = powersum + x[idx]
 
- return solution 
- ########################################################################
- ############################ END OF FILE ###############################
- #######################################################################
+      g[idc] = powersum - LP_LD[i]
+      idc = idc + 1
+
+    
+    return f,g
+
+########################################################################
+#########################   MAIN PROGRAM   #############################
+########################################################################
+
+key = b'MIDACO_LIMITED_VERSION___[CREATIVE_COMMONS_BY-NC-ND_LICENSE]'
+
+problem = {} # Initialize dictionary containing problem specifications
+option  = {} # Initialize dictionary containing MIDACO options
+
+problem['@'] = problem_function # Handle for problem function name
+
+########################################################################
+### Step 1: Problem definition     #####################################
+########################################################################
+
+# STEP 1.A: Problem dimensions
+##############################
+problem['o']  = 1  # Number of objectives 
+problem['n']  = 15  # Number of variables (in total) 
+problem['ni'] = 0  # Number of integer variables (0 <= ni <= n) 
+problem['m']  = 3  # Number of constraints (in total) 
+problem['me'] = 3  # Number of equality constraints (0 <= me <= m) 
+
+# STEP 1.B: Lower and upper bounds 'xl' & 'xu'  
+##############################################  
+problem['xl'] = [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+problem['xu'] = [10, 5.6, 0.5, 43.66, 100, 10, 5.6, 0.5, 46.64, 100, 10, 5.6, 8.71, 47.3, 100]
+
+
+# STEP 1.C: Starting point 'x'  
+##############################  
+problem['x'] = problem['xl'] # Here for example: starting point = lower bounds
+    
+########################################################################
+### Step 2: Choose stopping criteria and printing options    ###########
+########################################################################
+   
+# STEP 2.A: Stopping criteria 
+#############################
+option['maxeval'] = 10000     # Maximum number of function evaluation (e.g. 1000000) 
+option['maxtime'] = 60*60*24  # Maximum time limit in Seconds (e.g. 1 Day = 60*60*24) 
+
+# STEP 2.B: Printing options  
+############################ 
+option['printeval'] = 1000  # Print-Frequency for current best solution (e.g. 1000) 
+option['save2file'] = 1     # Save SCREEN and SOLUTION to TXT-files [0=NO/1=YES]
+
+########################################################################
+### Step 3: Choose MIDACO parameters (FOR ADVANCED USERS)    ###########
+########################################################################
+
+option['param1']  = 0.0  # ACCURACY  
+option['param2']  = 0.0  # SEED  
+option['param3']  = 0.0  # FSTOP  
+option['param4']  = 0.0  # ALGOSTOP  
+option['param5']  = 0.0  # EVALSTOP  
+option['param6']  = 0.0  # FOCUS  
+option['param7']  = 0.0  # ANTS  
+option['param8']  = 0.0  # KERNEL  
+option['param9']  = 0.0  # ORACLE  
+option['param10'] = 0.0  # PARETOMAX
+option['param11'] = 0.0  # EPSILON  
+option['param12'] = 0.0  # BALANCE
+option['param13'] = 0.0  # CHARACTER
+
+########################################################################
+### Step 4: Choose Parallelization Factor   ############################
+########################################################################
+
+option['parallel'] = 0 # Serial: 0 or 1, Parallel: 2,3,4,5,6,7,8...
+
+########################################################################
+############################ Run MIDACO ################################
+########################################################################
+
+import midaco
+
+if __name__ == '__main__': 
+
+  solution = midaco.run( problem, option, key )
+
+# print(solution['f'])
+# print(solution['g'])
+# print(solution['x'])
+
+########################################################################
+############################ END OF FILE ###############################
+########################################################################
