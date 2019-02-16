@@ -1,0 +1,13 @@
+Language used is Python 3.x
+
+Steps to compile:
+1> open python command line interface (or Anaconda command prompt) at the location where the python file (name: Assignment2part2.py), included in this project, is located i.e. you should be inside the folder "part ii".
+
+2> type the following command, make sure to enclose the full paths and pruning factor in double quotes:
+
+	python Assignment2part2.py <full path of training set csv file> <full path of training set csv file> <full path of training set csv file> <pruning factor in form of fraction>
+
+Eg: >>> conda "D:/mycode/utdallas/cs6375/Decision-tree-post-pruning/Dtree_with_pruning.py" "D:/mycode/utdallas/cs6375/Decision-tree-post-pruning/data_sets1/training_set.csv" "D:/mycode/utdallas/cs6375/Decision-tree-post-pruning/data_sets1/test_set.csv" "D:/mycode/utdallas/cs6375/Decision-tree-post-pruning/data_sets1/validation_set.csv" "0.05"
+
+3> Please give it some time to print the tree and stats
+
